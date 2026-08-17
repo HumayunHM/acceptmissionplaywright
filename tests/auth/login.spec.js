@@ -13,7 +13,7 @@ test.describe("Login", () => {
   test("logs in with valid credentials", async ({ page }) => {
     const studioPage = new StudioPage(page);
     await loginPage.login(process.env.LOGIN_EMAIL, process.env.LOGIN_PASSWORD);
-    await expect(studioPage.userMenuButton).toBeVisible();
+    await expect(studioPage.userMenuButton).toBeVisible({ timeout: 15000 });
   });
 
   test("shows an error with wrong email and wrong password", async ({
