@@ -127,18 +127,13 @@ export class IdeaPage {
   }
 
   async deleteIdea(title) {
-    const card = this.ideaCardContainerInLane("Idea submitted", title);
+    const card = this.page.locator(".group\\/card").filter({ hasText: title });
     await card.hover();
-    await this.ideaCardCheckbox("Idea submitted", title).click();
+    await card.getByRole("checkbox").click();
     await this.actionsButton.click();
     await this.deleteButton.click();
-    await this.ideaCardInLane("Idea submitted", title).waitFor({
-      state: "hidden",
-      timeout: 15000,
-    });
+    await card.waitFor({ state: "hidden", timeout: 15000 });
   }
-
-  // Add these methods:
 
   async openIdea(title) {
     await this.ideaCard(title).click(); // reuses your existing dynamic locator
@@ -194,5 +189,32 @@ export class IdeaPage {
     await this.addTeamMemberButton.click();
     await this.selectUserCombobox.click();
     await this.userOption(name).click();
+  }
+
+  async dragIdeaToLane(ideaTitle, fromLaneName, toLaneName) {
+    const source = this.ideaCardContainerInLane(fromLaneName, ideaTitle);
+    const target = this.laneByName(toLaneName);
+
+    await target.waitFor({ state: "visible", timeout: 10000 });
+
+    const sourceBox = await source.boundingBox();
+    const targetBox = await target.boundingBox();
+
+    await this.page.mouse.move(
+      sourceBox.x + sourceBox.width / 2,
+      sourceBox.y + sourceBox.height / 2,
+    );
+    await this.page.mouse.down();
+    await this.page.waitForTimeout(100);
+
+    await this.page.mouse.move(
+      targetBox.x + targetBox.width / 2,
+      targetBox.y + targetBox.height / 2,
+      { steps: 15 }, 
+    );
+    await this.page.waitForTimeout(100);
+
+    await this.page.mouse.up();
+    await this.page.waitForTimeout(1000);
   }
 }

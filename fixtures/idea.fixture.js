@@ -15,7 +15,9 @@ export const test = authTest.extend({
     await use({ title, description }); // test runs here
 
     // Teardown — runs after the test finishes, regardless of pass/fail
-    await ideaPage.backToFunnel();
+    if (await ideaPage.backToFunnelLink.isVisible()) {
+      await ideaPage.backToFunnel();
+    }
     await ideaPage.deleteIdea(title);
   },
 });
