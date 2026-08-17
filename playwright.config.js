@@ -44,7 +44,7 @@ export default defineConfig({
     },
     {
       name: "chromium",
-      testIgnore: /.*\.setup\.js/,
+      testIgnore: [/.*\.setup\.js/, /tests\/auth\/login\.spec\.js/],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/user.json",
@@ -52,10 +52,10 @@ export default defineConfig({
       dependencies: ["setup"],
     },
     {
-      name: 'chromium-no-auth',
+      name: "chromium-no-auth",
       testMatch: /tests\/auth\/login\.spec\.js/,
       use: {
-        ...devices['Desktop Chrome'],
+        ...devices["Desktop Chrome"],
       },
     },
 
