@@ -195,12 +195,13 @@ export class CampaignPage {
     }
   }
 
-  async pickCalendarDay(date) {
+  async pickCalendarDay(dateInput) {
+    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
     const month = date.toLocaleDateString("en-US", { month: "long" });
     const day = String(date.getDate());
     await this.page
       .getByLabel(month)
-      .getByRole("gridcell", { name: day, exact: true })
+      .getByRole("gridcell", { name: day })
       .click();
   }
 
