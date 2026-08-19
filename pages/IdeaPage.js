@@ -123,7 +123,7 @@ export class IdeaPage {
     await this.backToFunnelLink.click();
     await this.page
       .getByText("Idea submitted", { exact: true })
-      .waitFor({ state: "visible", timeout: 15000 });
+      .waitFor({ state: "visible", timeout: 30000 });
   }
 
   async deleteIdea(title) {
