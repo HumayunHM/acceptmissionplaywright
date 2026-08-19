@@ -2,7 +2,6 @@ export class CampaignPage {
   constructor(page) {
     this.page = page;
 
-    // Navigation
     this.ideaCollectingButton = page.getByRole("button", {
       name: "Idea collecting",
     });
@@ -11,13 +10,11 @@ export class CampaignPage {
       .getByRole("link", { name: "Campaigns" });
     this.campaignsLink = page.getByRole("link", { name: "Campaigns" });
 
-    // Create campaign
     this.addCampaignLink = page.getByRole("link", { name: "Add campaign" });
     this.titleInput = page.getByRole("textbox", {
       name: "Example: How can we improve",
     });
     this.datePickerButton = page.getByRole("button", { name: "Pick a date" });
-    // NOTE: hardcoded day-of-month from codegen — needs to be dynamic, see createCampaign()
     this.dateGridCell = (day) =>
       page.getByRole("gridcell", { name: String(day), exact: true });
     this.datePickerOverlay = page.locator(".fixed.inset-0");
@@ -25,11 +22,9 @@ export class CampaignPage {
       name: "Create campaign",
     });
 
-    // Campaign detail view (right after creation)
     this.startsDateText = (dateText) =>
       page.locator("span").filter({ hasText: dateText });
 
-    // Campaign list / delete
     this.campaignCardByTitle = (title) =>
       page.getByText(title, { exact: true });
     this.campaignCardContainer = (title) =>
@@ -42,6 +37,39 @@ export class CampaignPage {
     this.confirmDeleteButton = page.getByRole("button", {
       name: "Delete campaign",
     });
+
+    this.descriptionTextarea = page.locator("textarea");
+    this.briefingEditor = page.locator(".tiptap");
+    this.detailsTab = page.getByRole("tab", { name: "Details" });
+    this.selectDepartmentButton = page.getByRole("button", {
+      name: "Select department",
+    });
+    this.departmentOption = (name) =>
+      page.getByRole("button", { name: new RegExp(`^${name}\\b`) });
+    this.videoUrlInput = page.getByRole("textbox", {
+      name: "Add YouTube or Vimeo URL",
+    });
+    this.planningTab = page.getByRole("tab", { name: "Planning" });
+    this.contextTab = page.getByRole("tab", { name: "Context" });
+    this.viewCampaignLink = page.getByRole("link", { name: "View Campaign" });
+    this.manageCampaignLink = page.getByRole("link", {
+      name: "Manage campaign",
+    });
+    this.manageActionButton = page.getByRole("button", { name: "Action" });
+    this.manageDeleteItem = page.getByText("Delete", { exact: true });
+    this.statusTrigger = this.page.getByRole("button", {
+      name: /^(Draft|Live)$/,
+    });
+
+    this.liveOption = page.getByRole("option", { name: "Live", exact: true });
+    this.finishedIdeasLabel = page.getByText("Finished Ideas", { exact: true });
+    this.saveItemButton = page.getByRole("button", { name: "Save item" });
+    this.campaignVideoFrame = page.locator('iframe[title="Campaign video"]');
+    this.createDialog = page.getByRole("dialog");
+    this.titleField = this.page
+      .locator("label")
+      .filter({ has: this.page.locator("span", { hasText: "Title" }) })
+      .locator("xpath=following-sibling::input[1]");
   }
 
   async goToCampaigns() {
@@ -49,15 +77,17 @@ export class CampaignPage {
     await this.campaignsNavLink.click();
   }
 
-  async createCampaign(title, day) {
+  async createCampaign(title, date = new Date()) {
     await this.addCampaignLink.click();
     await this.titleInput.fill(title);
 
     await this.datePickerButton.click();
-    await this.dateGridCell(day).click();
-    await this.datePickerOverlay.click(); // closes the date picker overlay, per your codegen capture
+    await this.pickCalendarDay(date);
+    await this.datePickerOverlay.click();
 
     await this.createCampaignButton.click();
+    await this.createDialog.waitFor({ state: "hidden" });
+    await this.titleField.waitFor({ state: "visible" });
   }
 
   async backToCampaignsList() {
@@ -73,5 +103,122 @@ export class CampaignPage {
       state: "hidden",
       timeout: 15000,
     });
+  }
+
+  async fillDescriptionAndBriefing(description, briefing) {
+    await this.descriptionTextarea.click();
+    await this.descriptionTextarea.fill(description);
+
+    await this.briefingEditor.click();
+    await this.briefingEditor.pressSequentially(briefing);
+    await this.page.getByRole("heading", { name: "Campaign identity" }).click();
+    await this.waitForAutosave();
+  }
+
+  async selectDepartment(name) {
+    await this.detailsTab.click();
+    await this.selectDepartmentButton.click();
+    await this.departmentOption(name).click();
+  }
+
+  async addVideoLink(url) {
+    await this.videoUrlInput.fill(url);
+
+    await this.waitForAutosave();
+  }
+
+  async setStatusLive() {
+    await this.page.getByRole("button", { name: "Draft" }).click();
+    await this.page
+      .getByRole("menuitem", { name: "Live", exact: true })
+      .click();
+  }
+
+  async setCampaignEndDate(startDate, endDate) {
+    await this.planningTab.click();
+    const startLabel = startDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    await this.page
+      .getByRole("button", { name: new RegExp(`^${startLabel}`) })
+      .click();
+    await this.pickCalendarDay(endDate);
+    await this.closeDatePicker();
+    await this.waitForAutosave();
+  }
+
+  async setFinishedIdeasDate(date) {
+    await this.finishedIdeasLabel.click();
+    await this.page
+      .getByRole("button", { name: /\d{1,2}\/\d{2}\/\d{4}/ })
+      .click();
+    await this.pickCalendarDay(date);
+    await this.saveItemButton.click();
+  }
+
+  async addContextTags({ objectives, inScope, outOfScope, criteria }) {
+    await this.contextTab.click();
+    await this.addTagsUnder("Objectives", objectives);
+    await this.addTagsUnder("In scope", inScope);
+    await this.addTagsUnder("Out of scope", outOfScope);
+    await this.addTagsUnder("Evaluation criteria", criteria);
+
+    await this.waitForAutosave();
+  }
+
+  async openViewCampaign() {
+    await this.viewCampaignLink.click();
+  }
+
+  async openManageCampaign() {
+    await this.manageCampaignLink.click();
+  }
+
+  async deleteFromManage() {
+    await this.manageActionButton.click();
+    await this.manageDeleteItem.click();
+    await this.confirmDeleteButton.click();
+  }
+
+  async addTagsUnder(heading, tags) {
+    const card = this.page.locator("div.rounded-xl").filter({
+      has: this.page.getByRole("heading", { name: heading, exact: true }),
+    });
+    const input = card.getByPlaceholder("Add tag...");
+
+    for (const tag of tags) {
+      await input.click();
+      await input.pressSequentially(tag);
+      await input.press("Enter");
+      await card.getByText(tag, { exact: true }).waitFor({ state: "visible" });
+    }
+  }
+
+  async pickCalendarDay(date) {
+    const month = date.toLocaleDateString("en-US", { month: "long" });
+    const day = String(date.getDate());
+    await this.page
+      .getByLabel(month)
+      .getByRole("gridcell", { name: day, exact: true })
+      .click();
+  }
+
+  async closeDatePicker() {
+    if (await this.datePickerOverlay.isVisible()) {
+      await this.datePickerOverlay.click();
+    } else {
+      await this.page.keyboard.press("Escape");
+    }
+  }
+
+  async waitForAutosave() {
+    const saving = this.page.getByText("Saving", { exact: true });
+    await saving.waitFor({ state: "visible", timeout: 15000 });
+    await saving.waitFor({ state: "hidden", timeout: 15000 });
+  }
+
+  async waitForTitleInField(title) {
+    await expect(this.titleField).toHaveValue(title);
   }
 }
