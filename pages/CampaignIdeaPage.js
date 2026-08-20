@@ -8,13 +8,14 @@ export class CampaignIdeaPage {
     // Role+name alone is ambiguous (see bug-pattern doc #2), so we disambiguate
     // via each button's distinct, developer-authored color class instead of a
     // positional index (bg-success-500 = open form, bg-primary = submit form).
-    this.openSubmitIdeaButton = page.locator("button.bg-success-500", {
-      hasText: "Submit idea",
-    });
-    this.confirmSubmitIdeaButton = page.locator(
-      "button.bg-primary.rounded-full",
-      { hasText: "Submit idea" },
-    );
+    // replace the two fixed submit-idea locators with label-aware factories
+    this.openSubmitButton = (label = "Submit idea") =>
+      page.locator("button.bg-success-500", { hasText: label });
+    this.confirmSubmitButton = (label = "Submit idea") =>
+      page.locator("button.bg-primary.rounded-full", { hasText: label });
+
+    // new: the public-facing tab strip (Briefing / Ideas.../ My activity / etc.)
+    this.tabByLabel = (label) => page.getByRole("tab", { name: label });
 
     // Title/Description sit in generic `div[data-field]` wrappers with no
     // id/for link between <label> and <input>/<.tiptap>, so getByLabel can't
@@ -72,8 +73,13 @@ export class CampaignIdeaPage {
       this.ideaCardContainer(title).locator("button.absolute.inset-0");
   }
 
-  async openSubmitIdeaForm() {
-    await this.openSubmitIdeaButton.click();
+  // update methods to take an optional label, defaulting to today's behavior
+  async openSubmitIdeaForm(label = "Submit idea") {
+    await this.openSubmitButton(label).click();
+  }
+
+  async submitIdea(label = "Submit idea") {
+    await this.confirmSubmitButton(label).click();
   }
 
   async fillIdeaForm({ title, description, tags = [] }) {
@@ -87,10 +93,6 @@ export class CampaignIdeaPage {
       await this.tagInput.fill(tag);
       await this.tagInput.press("Enter");
     }
-  }
-
-  async submitIdea() {
-    await this.confirmSubmitIdeaButton.click();
   }
 
   async likeIdea(title) {

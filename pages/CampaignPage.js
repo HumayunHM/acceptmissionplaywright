@@ -70,6 +70,18 @@ export class CampaignPage {
       .locator("label")
       .filter({ has: this.page.locator("span", { hasText: "Title" }) })
       .locator("xpath=following-sibling::input[1]");
+
+    // in the constructor
+    this.inputTypeTrigger = page
+      .locator("label")
+      .filter({ hasText: "Campaign input type" })
+      .locator("xpath=following-sibling::div[1]")
+      .getByRole("combobox");
+    // The popover is rendered as a dialog (aria-haspopup="dialog" on the trigger),
+    // not a listbox, so options are matched by text inside that dialog rather
+    // than getByRole('option').
+    this.inputTypeOption = (label) =>
+      page.getByRole("dialog").getByText(label, { exact: true });
   }
 
   async goToCampaigns() {
@@ -169,6 +181,9 @@ export class CampaignPage {
 
   async openViewCampaign() {
     await this.viewCampaignLink.click();
+    await this.page
+      .getByRole("tablist")
+      .waitFor({ state: "visible", timeout: 15000 });
   }
 
   async openManageCampaign() {
@@ -225,5 +240,12 @@ export class CampaignPage {
 
   async navToManage() {
     await this.manageCampaignLink.click();
+  }
+
+  async setCampaignInputType(label) {
+    await this.detailsTab.click();
+    await this.inputTypeTrigger.click();
+    await this.inputTypeOption(label).click();
+    await this.waitForAutosave();
   }
 }
