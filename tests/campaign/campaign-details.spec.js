@@ -1,4 +1,4 @@
-import { test, expect } from "../../fixtures/idea.fixture.js";
+import { test, expect } from "../../fixtures/campaign.fixture.js";
 import { CampaignPage } from "../../pages/CampaignPage.js";
 
 function atMidnight(date) {
@@ -27,11 +27,12 @@ function longMonthDay(date) {
 }
 
 test.describe("Campaigns", () => {
-  test("can fill campaign details and see them on the view page, then delete", async ({
+  test("can fill campaign details and see them on the view page", async ({
     loggedInPage,
+    existingCampaign,
   }) => {
     const campaignPage = new CampaignPage(loggedInPage);
-    const title = `CAMPAIGN-${Date.now()}`;
+    const { title, startDate } = existingCampaign;
     const description = `DESC-${Date.now()}`;
     const briefing = `BRIEFING-${Date.now()}`;
     const department = "Marketing";
@@ -43,12 +44,9 @@ test.describe("Campaigns", () => {
       criteria: ["CRI1", "CRI2"],
     };
 
-    const startDate = atMidnight(new Date());
     const endDate = addDays(startDate, 28);
     const finishedIdeasDate = addDays(startDate, 36);
 
-    await campaignPage.goToCampaigns();
-    await campaignPage.createCampaign(title, startDate);
     await expect(campaignPage.titleField).toHaveValue(title);
     await campaignPage.fillDescriptionAndBriefing(description, briefing);
     await campaignPage.selectDepartment(department);
@@ -102,10 +100,6 @@ test.describe("Campaigns", () => {
         .getByRole("link", { name: /Lesson 3\.3 Interdepartmental/ }),
     ).toBeVisible();
 
-    await campaignPage.openManageCampaign();
-    await campaignPage.deleteFromManage();
-    await expect(
-      loggedInPage.getByRole("heading", { name: title }),
-    ).not.toBeVisible();
+    await campaignPage.navToManage();
   });
 });

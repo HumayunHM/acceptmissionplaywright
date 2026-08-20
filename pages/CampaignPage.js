@@ -222,4 +222,8 @@ export class CampaignPage {
   async waitForTitleInField(title) {
     await expect(this.titleField).toHaveValue(title);
   }
+
+  async navToManage() {
+    await this.manageCampaignLink.click();
+  }
 }
